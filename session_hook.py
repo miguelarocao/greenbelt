@@ -8,13 +8,12 @@ from datetime import datetime
 from datetime import UTC
 from pathlib import Path
 
-import ecologi
-import local as local_provider
 from db import init_db
 from db import add_trees
 from db import add_usage
 from db import get_total_trees
 from db import get_unaccounted_usage
+from providers import PROVIDERS, KEYLESS_PROVIDERS
 
 
 CONFIG_PATH = Path(os.environ.get("GREENBELT_CONFIG", Path.home() / ".claude" / "greenbelt.toml"))
@@ -26,14 +25,6 @@ threshold = 1_000_000
 [ecologi]
 api_key = "" # get it from https://app.ecologi.com/impact-api
 """
-
-# Providers that don't require an API key
-_KEYLESS_PROVIDERS = {"local"}
-
-_PROVIDERS = {
-    "ecologi": ecologi.plant_trees,
-    "local": local_provider.plant_trees,
-}
 
 
 def _parse_usage(raw: str) -> int:
@@ -122,13 +113,13 @@ def handle_stop(config: dict, input_data: dict) -> None:
         return
 
     provider = config["provider"]
-    plant_fn = _PROVIDERS.get(provider)
+    plant_fn = PROVIDERS.get(provider)
     if plant_fn is None:
         print(f"[greenbelt] Unsupported provider: {provider}", file=sys.stderr)
         sys.exit(1)
 
     api_key = config.get(provider, {}).get("api_key", "")
-    if provider not in _KEYLESS_PROVIDERS and not api_key:
+    if provider not in KEYLESS_PROVIDERS and not api_key:
         print(f"[greenbelt] Warning: {provider}.api_key is blank; skipping tree planting", file=sys.stderr)
         sys.exit(1)
 
