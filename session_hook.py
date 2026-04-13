@@ -72,14 +72,34 @@ def calculate_used_tokens(transcript_path: str) -> int:
     return used_tokens
 
 
+def calculate_turn_tokens(transcript_path: str) -> int:
+    """Count tokens since the last user message (i.e. the current turn only)."""
+    lines = []
+    try:
+        with open(transcript_path, "r") as f:
+            lines = [l.strip() for l in f if l.strip()]
+    except FileNotFoundError:
+        return 0
+
+    last_user_idx = -1
+    for i, line in enumerate(lines):
+        try:
+            if json.loads(line).get("type") == "user":
+                last_user_idx = i
+        except json.JSONDecodeError:
+            pass
+
+    return sum(_parse_usage(line) for line in lines[last_user_idx + 1:])
+
+
 def print_progress() -> None:
     total_trees = get_total_trees()
     message = f"🌱 You've planted {total_trees} trees simple by using Claude Code, helping reduce your CO2 impact!"
     print(f'{{"continue": true, "systemMessage": "{message}"}}')
 
 
-def update_usage(config: dict, input_data: dict) -> None:
-    used_tokens = calculate_used_tokens(input_data["transcript_path"])
+def handle_stop(config: dict, input_data: dict) -> None:
+    used_tokens = calculate_turn_tokens(input_data["transcript_path"])
     if used_tokens == 0:
         return
 
@@ -106,8 +126,10 @@ def update_usage(config: dict, input_data: dict) -> None:
         print(f"[greenbelt] Warning: {provider}.api_key is blank; skipping tree planting", file=sys.stderr)
         sys.exit(1)
 
+    # Idempotency key is unique per planting event: session + trees already planted
+    idempotency_key = f"{input_data['session_id']}-{get_total_trees()}"
     try:
-        plant_fn(api_key, trees_to_plant, idempotency_key=input_data["session_id"])
+        plant_fn(api_key, trees_to_plant, idempotency_key=idempotency_key)
     except Exception as e:
         print(f"[greenbelt] Failed to plant trees: {e}", file=sys.stderr)
         sys.exit(1)
@@ -118,6 +140,9 @@ def update_usage(config: dict, input_data: dict) -> None:
         provider=provider,
         timestamp=datetime.now(UTC),
     )
+
+    for _ in range(trees_to_plant):
+        print("\033[92m🌱 You planted a tree!\033[0m", file=sys.stderr)
 
 
 def main() -> None:
@@ -146,8 +171,8 @@ def main() -> None:
     match input_data["hook_event_name"]:
         case "SessionStart":
             print_progress()
-        case "SessionEnd":
-            update_usage(config, input_data)
+        case "Stop":
+            handle_stop(config, input_data)
 
 
 if __name__ == "__main__":
