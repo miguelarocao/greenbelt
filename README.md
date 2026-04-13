@@ -6,6 +6,12 @@ Greenbelt tracks token usage across Claude Code sessions and plants trees whenev
 
 ## Get started
 
+Or just tell Claude Code:
+
+```
+Follow the README at https://github.com/miguelarocao/greenbelt to set up greenbelt locally
+```
+
 **1. Clone the repo**
 
 ```bash
