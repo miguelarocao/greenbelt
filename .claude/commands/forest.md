@@ -1,3 +1,7 @@
+---
+allowed_tools: Bash(python3 ~/.claude/greenbelt/forest.py)
+---
+
 Run the Greenbelt forest viewer:
 
 ```bash

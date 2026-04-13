@@ -12,6 +12,8 @@ Or just tell Claude Code:
 Follow the README at https://github.com/miguelarocao/greenbelt to set up greenbelt locally
 ```
 
+**Prerequisites:** Python 3.11+ (`brew install python@3.11` on macOS if needed)
+
 **1. Clone the repo**
 
 ```bash
@@ -59,10 +61,17 @@ To track tokens across every project (not just when working in the greenbelt dir
       {
         "hooks": [{ "type": "command", "command": "python3 ~/.claude/greenbelt/session_hook.py" }]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "python3 ~/.claude/greenbelt/session_hook.py" }]
+      }
     ]
   }
 }
 ```
+
+The `UserPromptSubmit` hook makes `/forest` and `/plant` run instantly without going through the LLM.
 
 ## Commands
 

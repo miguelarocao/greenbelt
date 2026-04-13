@@ -2,10 +2,15 @@
 
 import json
 import os
+import subprocess
 import sys
+
+if sys.version_info < (3, 11):
+    print("[greenbelt] Python 3.11+ is required. Install it via Homebrew: brew install python@3.11", file=sys.stderr)
+    sys.exit(1)
+
 import tomllib
-from datetime import datetime
-from datetime import UTC
+from datetime import datetime, UTC
 from pathlib import Path
 
 from db import init_db
@@ -17,6 +22,7 @@ from providers import PROVIDERS, KEYLESS_PROVIDERS
 
 
 CONFIG_PATH = Path(os.environ.get("GREENBELT_CONFIG", Path.home() / ".claude" / "greenbelt.toml"))
+
 
 CONFIG_TEMPLATE = """\
 provider = "ecologi"
@@ -141,6 +147,30 @@ def handle_stop(config: dict, input_data: dict) -> None:
     print(_tree_message(trees_to_plant), file=sys.stderr)
 
 
+def handle_prompt_submit(input_data: dict) -> None:
+    prompt = input_data.get("prompt", "").strip()
+    greenbelt_dir = Path(__file__).parent
+
+    if prompt == "/forest":
+        subprocess.run([sys.executable, str(greenbelt_dir / "forest.py")])
+        sys.exit(2)
+
+    if prompt == "/plant":
+        try:
+            with open("/dev/tty", "r+") as tty:
+                tty.write("🌱 Plant a tree now? (yes/no) ")
+                tty.flush()
+                response = tty.readline().strip()
+        except OSError:
+            sys.exit(0)  # fall back to LLM if no tty
+
+        if response == "yes":
+            subprocess.run([sys.executable, str(greenbelt_dir / "plant.py")])
+        else:
+            sys.stderr.write("Cancelled.\n")
+        sys.exit(2)
+
+
 def main() -> None:
     """
     See https://code.claude.com/docs/en/hooks#common-input-fields
@@ -164,11 +194,13 @@ def main() -> None:
 
     init_db()
 
-    match input_data["hook_event_name"]:
-        case "SessionStart":
-            print_progress()
-        case "Stop":
-            handle_stop(config, input_data)
+    event = input_data["hook_event_name"]
+    if event == "SessionStart":
+        print_progress()
+    elif event == "Stop":
+        handle_stop(config, input_data)
+    elif event == "UserPromptSubmit":
+        handle_prompt_submit(input_data)
 
 
 if __name__ == "__main__":
