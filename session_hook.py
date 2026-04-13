@@ -8,22 +8,32 @@ from datetime import datetime
 from datetime import UTC
 from pathlib import Path
 
+import ecologi
+import local as local_provider
 from db import init_db
 from db import add_trees
 from db import add_usage
 from db import get_total_trees
 from db import get_unaccounted_usage
-from ecologi import plant_trees
 
 
 CONFIG_PATH = Path(os.environ.get("GREENBELT_CONFIG", Path.home() / ".claude" / "greenbelt.toml"))
 
 CONFIG_TEMPLATE = """\
 provider = "ecologi"
+# provider = "local"  # file-based, no API key needed (good for local testing)
 threshold = 1_000_000
 [ecologi]
 api_key = "" # get it from https://app.ecologi.com/impact-api
 """
+
+# Providers that don't require an API key
+_KEYLESS_PROVIDERS = {"local"}
+
+_PROVIDERS = {
+    "ecologi": ecologi.plant_trees,
+    "local": local_provider.plant_trees,
+}
 
 
 def _parse_usage(raw: str) -> int:
@@ -86,17 +96,18 @@ def update_usage(config: dict, input_data: dict) -> None:
         return
 
     provider = config["provider"]
-    if provider != "ecologi":
+    plant_fn = _PROVIDERS.get(provider)
+    if plant_fn is None:
         print(f"[greenbelt] Unsupported provider: {provider}", file=sys.stderr)
         sys.exit(1)
 
     api_key = config.get(provider, {}).get("api_key", "")
-    if not api_key:
-        print("[greenbelt] Warning: ecologi.api_key is blank; skipping tree planting", file=sys.stderr)
+    if provider not in _KEYLESS_PROVIDERS and not api_key:
+        print(f"[greenbelt] Warning: {provider}.api_key is blank; skipping tree planting", file=sys.stderr)
         sys.exit(1)
 
     try:
-        plant_trees(api_key, trees_to_plant, idempotency_key=input_data["session_id"])
+        plant_fn(api_key, trees_to_plant, idempotency_key=input_data["session_id"])
     except Exception as e:
         print(f"[greenbelt] Failed to plant trees: {e}", file=sys.stderr)
         sys.exit(1)
