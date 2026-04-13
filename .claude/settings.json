@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 session_hook.py"
+            "command": "bash session_hook.sh"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 session_hook.py"
+            "command": "bash session_hook.sh"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 session_hook.py"
+            "command": "bash session_hook.sh"
           }
         ]
       }

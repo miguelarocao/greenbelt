@@ -54,17 +54,17 @@ To track tokens across every project (not just when working in the greenbelt dir
   "hooks": {
     "SessionStart": [
       {
-        "hooks": [{ "type": "command", "command": "python3 ~/.claude/greenbelt/session_hook.py" }]
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/greenbelt/session_hook.sh" }]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "python3 ~/.claude/greenbelt/session_hook.py" }]
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/greenbelt/session_hook.sh" }]
       }
     ],
     "UserPromptSubmit": [
       {
-        "hooks": [{ "type": "command", "command": "python3 ~/.claude/greenbelt/session_hook.py" }]
+        "hooks": [{ "type": "command", "command": "bash ~/.claude/greenbelt/session_hook.sh" }]
       }
     ]
   }

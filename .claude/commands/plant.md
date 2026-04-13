@@ -1,5 +1,5 @@
 ---
-allowed_tools: Bash(python3 ~/.claude/greenbelt/plant.py)
+allowed_tools: Bash(bash ~/.claude/greenbelt/session_hook.sh)
 ---
 
 Ask the user: "🌱 Plant a tree now? (yes/no)"

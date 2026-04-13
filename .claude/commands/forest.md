@@ -1,5 +1,5 @@
 ---
-allowed_tools: Bash(python3 ~/.claude/greenbelt/forest.py)
+allowed_tools: Bash(bash ~/.claude/greenbelt/session_hook.sh)
 ---
 
 Run the Greenbelt forest viewer:
