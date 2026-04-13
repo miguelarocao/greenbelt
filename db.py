@@ -9,6 +9,7 @@ __all__ = [
     "get_total_trees",
     "get_unaccounted_usage",
     "add_trees",
+    "get_planted_trees",
 ]
 
 DB_PATH = Path(os.environ.get("GREENBELT_DB", Path.home() / ".claude" / "greenbelt.sqlite3"))
@@ -76,6 +77,16 @@ def get_unaccounted_usage() -> int:
     """).fetchone()
     conn.close()
     return row[0]
+
+
+def get_planted_trees() -> list[tuple[int, str]]:
+    """Return (num_trees, created_at) for each planting event, oldest first."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT num_trees, created_at FROM planted_trees ORDER BY created_at"
+    ).fetchall()
+    conn.close()
+    return rows
 
 
 def get_total_trees() -> int:

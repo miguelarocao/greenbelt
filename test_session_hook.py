@@ -4,6 +4,7 @@ import tempfile
 import unittest
 
 from session_hook import calculate_used_tokens, calculate_turn_tokens, _tree_message
+from forest import forest_lines
 
 EXAMPLE = os.path.join(os.path.dirname(__file__), "test_transcript.jsonl")
 
@@ -73,6 +74,35 @@ class TestTreeMessage(unittest.TestCase):
     def test_plural(self):
         self.assertEqual(_tree_message(2), "\033[92m🌱 You planted 2 trees!\033[0m")
         self.assertEqual(_tree_message(5), "\033[92m🌱 You planted 5 trees!\033[0m")
+
+
+class TestForestLines(unittest.TestCase):
+    def test_no_trees(self):
+        lines = forest_lines(0, 0, "🌱")
+        self.assertEqual(lines, ["  (no trees yet — keep coding!)"])
+
+    def test_only_old_trees(self):
+        lines = forest_lines(3, 0, "🌱")
+        self.assertEqual(lines, ["  🌳  🌳  🌳"])
+
+    def test_only_new_trees(self):
+        lines = forest_lines(0, 2, "🌱")
+        self.assertEqual(lines, ["  🌱  🌱"])
+
+    def test_old_and_new_trees(self):
+        lines = forest_lines(2, 2, "🌿")
+        self.assertEqual(lines, ["  🌳  🌳  🌿  🌿"])
+
+    def test_wraps_at_ten_columns(self):
+        lines = forest_lines(10, 2, "🌱")
+        self.assertEqual(len(lines), 2)
+        self.assertEqual(lines[0].strip().count("🌳"), 10)
+        self.assertEqual(lines[1].strip().count("🌱"), 2)
+
+    def test_new_icon_reflects_growth_stage(self):
+        for icon in ["🌱", "🌿", "🌳"]:
+            lines = forest_lines(0, 1, icon)
+            self.assertIn(icon, lines[0])
 
 
 if __name__ == "__main__":
