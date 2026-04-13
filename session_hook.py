@@ -92,9 +92,15 @@ def calculate_turn_tokens(transcript_path: str) -> int:
     return sum(_parse_usage(line) for line in lines[last_user_idx + 1:])
 
 
+def _tree_message(n: int) -> str:
+    label = "a tree" if n == 1 else f"{n} trees"
+    return f"\033[92m🌱 You planted {label}!\033[0m"
+
+
 def print_progress() -> None:
     total_trees = get_total_trees()
-    message = f"🌱 You've planted {total_trees} trees simple by using Claude Code, helping reduce your CO2 impact!"
+    label = "1 tree" if total_trees == 1 else f"{total_trees} trees"
+    message = f"🌱 You've planted {label} simply by using Claude Code, helping reduce your CO2 impact!"
     print(f'{{"continue": true, "systemMessage": "{message}"}}')
 
 
@@ -141,8 +147,7 @@ def handle_stop(config: dict, input_data: dict) -> None:
         timestamp=datetime.now(UTC),
     )
 
-    for _ in range(trees_to_plant):
-        print("\033[92m🌱 You planted a tree!\033[0m", file=sys.stderr)
+    print(_tree_message(trees_to_plant), file=sys.stderr)
 
 
 def main() -> None:
