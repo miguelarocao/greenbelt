@@ -1,4 +1,9 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(bash ~/.claude/greenbelt/run.sh *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -11,16 +16,6 @@
       }
     ],
     "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash session_hook.sh"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
       {
         "hooks": [
           {

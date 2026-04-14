@@ -1,13 +1,9 @@
 ---
-allowed_tools: Bash(bash ~/.claude/greenbelt/session_hook.sh)
+allowed_tools:
+  - Bash(bash ~/.claude/greenbelt/run.sh plant.py)
 ---
 
-Ask the user: "🌱 Plant a tree now? (yes/no)"
+Ask: "🌱 Plant a tree? (yes/no)"
 
-If the response is exactly "yes", run:
-
-```bash
-python3 ~/.claude/greenbelt/plant.py
-```
-
-Otherwise respond: "Cancelled."
+If exactly "yes": run `bash ~/.claude/greenbelt/run.sh plant.py`
+Otherwise: "Cancelled."

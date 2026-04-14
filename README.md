@@ -61,17 +61,10 @@ To track tokens across every project (not just when working in the greenbelt dir
       {
         "hooks": [{ "type": "command", "command": "bash ~/.claude/greenbelt/session_hook.sh" }]
       }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [{ "type": "command", "command": "bash ~/.claude/greenbelt/session_hook.sh" }]
-      }
     ]
   }
 }
 ```
-
-The `UserPromptSubmit` hook makes `/forest` and `/plant` run instantly without going through the LLM.
 
 ## Commands
 

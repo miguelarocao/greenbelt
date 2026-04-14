@@ -1,11 +1,6 @@
 ---
-allowed_tools: Bash(bash ~/.claude/greenbelt/session_hook.sh)
+allowed_tools:
+  - Bash(bash ~/.claude/greenbelt/run.sh forest.py)
 ---
 
-Run the Greenbelt forest viewer:
-
-```bash
-python3 ~/.claude/greenbelt/forest.py
-```
-
-The script writes directly to the terminal and handles its own output — do not add any commentary before or after running it.
+Run `bash ~/.claude/greenbelt/run.sh forest.py`. No other output.
