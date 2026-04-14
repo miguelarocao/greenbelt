@@ -3,9 +3,13 @@
 import json
 import os
 import sys
+
+if sys.version_info < (3, 11):
+    print("[greenbelt] Python 3.11+ is required. Install it via Homebrew: brew install python@3.11", file=sys.stderr)
+    sys.exit(1)
+
 import tomllib
-from datetime import datetime
-from datetime import UTC
+from datetime import datetime, UTC
 from pathlib import Path
 
 from db import init_db
@@ -13,13 +17,15 @@ from db import add_trees
 from db import add_usage
 from db import get_total_trees
 from db import get_unaccounted_usage
-from ecologi import plant_trees
+from providers import PROVIDERS, KEYLESS_PROVIDERS
 
 
 CONFIG_PATH = Path(os.environ.get("GREENBELT_CONFIG", Path.home() / ".claude" / "greenbelt.toml"))
 
+
 CONFIG_TEMPLATE = """\
 provider = "ecologi"
+# provider = "local"  # file-based, no API key needed (good for local testing)
 threshold = 1_000_000
 [ecologi]
 api_key = "" # get it from https://app.ecologi.com/impact-api
@@ -62,14 +68,40 @@ def calculate_used_tokens(transcript_path: str) -> int:
     return used_tokens
 
 
+def calculate_turn_tokens(transcript_path: str) -> int:
+    """Count tokens since the last user message (i.e. the current turn only)."""
+    lines = []
+    try:
+        with open(transcript_path, "r") as f:
+            lines = [l.strip() for l in f if l.strip()]
+    except FileNotFoundError:
+        return 0
+
+    last_user_idx = -1
+    for i, line in enumerate(lines):
+        try:
+            if json.loads(line).get("type") == "user":
+                last_user_idx = i
+        except json.JSONDecodeError:
+            pass
+
+    return sum(_parse_usage(line) for line in lines[last_user_idx + 1:])
+
+
+def _tree_message(n: int) -> str:
+    label = "a tree" if n == 1 else f"{n} trees"
+    return f"\033[92m🌱 You planted {label}!\033[0m"
+
+
 def print_progress() -> None:
     total_trees = get_total_trees()
-    message = f"🌱 You've planted {total_trees} trees simple by using Claude Code, helping reduce your CO2 impact!"
+    label = "1 tree" if total_trees == 1 else f"{total_trees} trees"
+    message = f"🌱 You've planted {label} simply by using Claude Code, helping reduce your CO2 impact!"
     print(f'{{"continue": true, "systemMessage": "{message}"}}')
 
 
-def update_usage(config: dict, input_data: dict) -> None:
-    used_tokens = calculate_used_tokens(input_data["transcript_path"])
+def handle_stop(config: dict, input_data: dict) -> None:
+    used_tokens = calculate_turn_tokens(input_data["transcript_path"])
     if used_tokens == 0:
         return
 
@@ -86,17 +118,20 @@ def update_usage(config: dict, input_data: dict) -> None:
         return
 
     provider = config["provider"]
-    if provider != "ecologi":
+    plant_fn = PROVIDERS.get(provider)
+    if plant_fn is None:
         print(f"[greenbelt] Unsupported provider: {provider}", file=sys.stderr)
         sys.exit(1)
 
     api_key = config.get(provider, {}).get("api_key", "")
-    if not api_key:
-        print("[greenbelt] Warning: ecologi.api_key is blank; skipping tree planting", file=sys.stderr)
+    if provider not in KEYLESS_PROVIDERS and not api_key:
+        print(f"[greenbelt] Warning: {provider}.api_key is blank; skipping tree planting", file=sys.stderr)
         sys.exit(1)
 
+    # Idempotency key is unique per planting event: session + trees already planted
+    idempotency_key = f"{input_data['session_id']}-{get_total_trees()}"
     try:
-        plant_trees(api_key, trees_to_plant, idempotency_key=input_data["session_id"])
+        plant_fn(api_key, trees_to_plant, idempotency_key=idempotency_key)
     except Exception as e:
         print(f"[greenbelt] Failed to plant trees: {e}", file=sys.stderr)
         sys.exit(1)
@@ -107,6 +142,9 @@ def update_usage(config: dict, input_data: dict) -> None:
         provider=provider,
         timestamp=datetime.now(UTC),
     )
+
+    print(_tree_message(trees_to_plant), file=sys.stderr)
+
 
 
 def main() -> None:
@@ -132,11 +170,11 @@ def main() -> None:
 
     init_db()
 
-    match input_data["hook_event_name"]:
-        case "SessionStart":
-            print_progress()
-        case "SessionEnd":
-            update_usage(config, input_data)
+    event = input_data["hook_event_name"]
+    if event == "SessionStart":
+        print_progress()
+    elif event == "Stop":
+        handle_stop(config, input_data)
 
 
 if __name__ == "__main__":
