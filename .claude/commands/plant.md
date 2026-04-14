@@ -1,9 +1,10 @@
 ---
 allowed_tools:
   - Bash(bash ~/.claude/greenbelt/run.sh plant.py)
+  - AskUserQuestion
 ---
 
-Ask: "🌱 Plant a tree? (yes/no)"
+Use AskUserQuestion to ask: "🌱 Plant a tree?" with options "yes" (Plant a tree now) and "no" (Cancel).
 
-If exactly "yes": run `bash ~/.claude/greenbelt/run.sh plant.py`
+If the answer is "yes": run `bash ~/.claude/greenbelt/run.sh plant.py`
 Otherwise: "Cancelled."
